@@ -406,7 +406,8 @@
 			border-radius: 12px;
 			margin: 2px 1px;
 			background-color: transparent;
-			transition: background-color 0.15s ease, border-color 0.15s ease;
+			/* transform 트랜지션 추가 */
+			transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 			-webkit-tap-highlight-color: transparent;
 		}
 
@@ -424,6 +425,12 @@
 
 		.calendar-wrapper.edit-active .fc-daygrid-day-frame {
 			cursor: pointer;
+		}
+
+		/* 터치 순간 반응: 살짝 축소(0.93배) 및 반투명 틴트 배경 */
+		.calendar-wrapper.edit-active .fc-daygrid-day-frame:active {
+			transform: scale(0.93);
+			background-color: rgba(239, 68, 68, 0.12) !important;
 		}
 
 		.fc-daygrid-day-top {
