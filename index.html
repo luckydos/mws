@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>근무 캘린더</title>
+
+	<!-- PWA Manifest 연결 -->
+	<link rel="manifest" href="./manifest.json">
+	<meta name="theme-color" content="#2563eb">
+
+	<!-- iOS 사파리 홈화면 추가 대응 -->
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="근무캘린더">
+	<link rel="apple-touch-icon" href="./images/icon-192.png">
+
+	<!-- Service Worker 등록 스크립트 -->
+	<script>
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('./service-worker.js')
+					.then(reg => console.log('PWA ServiceWorker 등록 성공:', reg.scope))
+					.catch(err => console.log('PWA ServiceWorker 등록 실패:', err));
+			});
+		}
+	</script>
+
+	<!-- FullCalendar CDN -->
+	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+	<style>
+		:root {
+			--primary: #2563eb;
+			--primary-soft: #eff6ff;
+			--danger: #ef4444;
+			/* 피로도를 줄인 맑고 은은한 코랄 틴트 (4~5% 수준) */
+			--danger-soft: rgba(239, 68, 68, 0.05);
+			--border: #f1f5f9;
+			--text: #0f172a;
+			--text-muted: #94a3b8;
+			/* 차분한 주말용 뮤트 그레이 */
+			--text-sub: #64748b;
+		}
+
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		}
+
+		body {
+			background-color: #f8fafc;
+			color: var(--text);
+			display: flex;
+			justify-content: center;
+			min-height: 100vh;
+		}
+
+		.app-container {
+			width: 100%;
+			max-width: 440px;
+			background: #ffffff;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+			position: relative;
+		}
+
+		/* 로그인 화면 */
+		#auth-view {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			padding: 30px 24px;
+			flex: 1;
+		}
+
+		.auth-card {
+			width: 100%;
+			text-align: center;
+		}
+
+		.auth-card h2 {
+			margin-bottom: 8px;
+			font-size: 1.4rem;
+			font-weight: 700;
+		}
+
+		.auth-card p {
+			color: var(--text-sub);
+			font-size: 0.9rem;
+			margin-bottom: 24px;
+		}
+
+		.auth-card input[type="password"] {
+			width: 100%;
+			padding: 14px;
+			border: 1.5px solid #e2e8f0;
+			border-radius: 12px;
+			font-size: 1.05rem;
+			outline: none;
+			margin-bottom: 12px;
+			text-align: center;
+		}
+
+		.auth-card button {
+			width: 100%;
+			padding: 14px;
+			background: var(--primary);
+			color: white;
+			border: none;
+			border-radius: 12px;
+			font-size: 1rem;
+			font-weight: bold;
+			cursor: pointer;
+		}
+
+		/* 메인 화면 */
+		#main-view {
+			display: none;
+			flex-direction: column;
+			flex: 1;
+		}
+
+		/* 🌟 상단 헤더: 미니멀 컬러 뱃지 + 타이틀 + 로그아웃 아이콘 */
+		header {
+			padding: 16px 20px;
+			border-bottom: 1px solid var(--border);
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.header-left {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.app-icon-badge {
+			width: 32px;
+			height: 32px;
+			background: var(--primary-soft);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--primary);
+		}
+
+		.app-icon-badge svg {
+			width: 18px;
+			height: 18px;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 2.2;
+		}
+
+		.app-title {
+			font-size: 1.15rem;
+			font-weight: 800;
+			letter-spacing: -0.3px;
+		}
+
+		.logout-btn {
+			border: none;
+			background: none;
+			color: var(--text-sub);
+			cursor: pointer;
+			padding: 6px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 8px;
+			transition: background-color 0.15s;
+		}
+
+		.logout-btn:active {
+			background-color: #f1f5f9;
+		}
+
+		.logout-btn svg {
+			width: 20px;
+			height: 20px;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 2;
+		}
+
+		/* 통계 요약 바 */
+		.summary-card {
+			padding: 12px 18px;
+			margin: 12px 16px 8px 16px;
+			background: #f8fafc;
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			display: flex;
+			justify-content: space-around;
+			text-align: center;
+		}
+
+		.summary-item .label {
+			font-size: 0.72rem;
+			color: var(--text-sub);
+			margin-bottom: 3px;
+			font-weight: 600;
+		}
+
+		.summary-item .value {
+			font-size: 1.25rem;
+			font-weight: 800;
+			color: var(--primary);
+		}
+
+		.summary-item .value.danger {
+			color: var(--danger);
+		}
+
+		/* 슬림 편집 모드 토글 바 */
+		.mode-bar {
+			margin: 0 16px 12px 16px;
+			padding: 8px 14px;
+			background: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 10px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			transition: all 0.2s ease;
+		}
+
+		.mode-bar.active {
+			background: #fff5f5;
+			border-color: rgba(239, 68, 68, 0.3);
+		}
+
+		.mode-label {
+			font-size: 0.82rem;
+			font-weight: 700;
+			color: var(--text-sub);
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		.mode-bar.active .mode-label {
+			color: var(--danger);
+		}
+
+		.toggle-switch {
+			position: relative;
+			display: inline-block;
+			width: 40px;
+			height: 22px;
+		}
+
+		.toggle-switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #cbd5e1;
+			transition: .25s;
+			border-radius: 22px;
+		}
+
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 16px;
+			width: 16px;
+			left: 3px;
+			bottom: 3px;
+			background-color: white;
+			transition: .25s;
+			border-radius: 50%;
+		}
+
+		input:checked+.slider {
+			background-color: var(--danger);
+		}
+
+		input:checked+.slider:before {
+			transform: translateX(18px);
+		}
+
+		/* 🌟 FullCalendar 플랫 미니멀 디자인 (모든 표/외곽선 제거) */
+		.calendar-wrapper {
+			padding: 0 10px 20px 10px;
+			flex: 1;
+		}
+
+		.fc {
+			font-size: 0.85rem;
+		}
+
+		/* 툴바: 월 이동 버튼 간격(Gap) 확보 */
+		.fc .fc-toolbar {
+			margin-bottom: 12px !important;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.fc .fc-toolbar-chunk:first-child {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		.fc .fc-button-group {
+			display: flex !important;
+			gap: 6px !important;
+		}
+
+		.fc .fc-button-group>.fc-button {
+			border-radius: 8px !important;
+			margin: 0 !important;
+		}
+
+		.fc .fc-toolbar-title {
+			font-size: 1.15rem !important;
+			font-weight: 800;
+		}
+
+		.fc .fc-button {
+			padding: 6px 11px !important;
+			font-size: 0.8rem !important;
+			border-radius: 8px !important;
+			background: #f8fafc !important;
+			border: 1px solid #e2e8f0 !important;
+			color: var(--text) !important;
+			box-shadow: none !important;
+		}
+
+		.fc .fc-button:active {
+			background: #e2e8f0 !important;
+		}
+
+		/* 요일 헤더: 외곽선 제거 */
+		.fc-col-header {
+			width: 100% !important;
+		}
+
+		.fc-col-header-cell {
+			padding: 8px 0 !important;
+			background: transparent !important;
+			border: none !important;
+			font-size: 0.8rem;
+			font-weight: 600;
+			color: var(--text-sub);
+		}
+
+		/* 🌟 외곽 및 내부 모든 테이블 테두리 제거 (방법 A 반영) */
+		.fc-theme-standard .fc-scrollgrid {
+			border: none !important;
+		}
+
+		.fc-theme-standard td,
+		.fc-theme-standard th {
+			border: none !important;
+		}
+
+		.fc-scrollgrid-section>td,
+		.fc-scrollgrid-section>th {
+			border: none !important;
+		}
+
+		.fc-scrollgrid-sync-table {
+			width: 100% !important;
+		}
+
+		/* 개별 날짜 카드 형태 */
+		.fc-daygrid-day-frame {
+			min-height: 68px !important;
+			padding: 6px 2px !important;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+			align-items: center;
+			cursor: pointer;
+			border-radius: 12px;
+			margin: 2px 1px;
+			background-color: transparent;
+			transition: background-color 0.15s ease, border-color 0.15s ease;
+		}
+
+		.fc-daygrid-day-top {
+			flex-direction: row !important;
+			justify-content: center !important;
+			margin-bottom: 4px;
+		}
+
+		/* 평일 날짜 */
+		.fc-daygrid-day-number {
+			font-size: 0.85rem !important;
+			font-weight: 600;
+			padding: 0 !important;
+			color: var(--text);
+		}
+
+		/* 주말(토/일) 색상: 뮤트 그레이 */
+		.fc-day-sun .fc-daygrid-day-number,
+		.fc-day-sat .fc-daygrid-day-number {
+			color: var(--text-muted) !important;
+			font-weight: 500;
+		}
+
+		/* 누런 기본 배경 제거 */
+		.fc-day-today {
+			background-color: transparent !important;
+		}
+
+		/* 오늘 날짜 표시: 테두리 라인 + 블루 텍스트 */
+		.fc-day-today .fc-daygrid-day-frame {
+			border: 1.5px solid var(--primary) !important;
+			background-color: #fafcff;
+		}
+
+		.fc-day-today .fc-daygrid-day-number {
+			color: var(--primary) !important;
+			font-weight: 800 !important;
+		}
+
+		/* 휴일 스타일: 은은한 파스텔 틴트 + 레드 숫자 + 미니 레드 도트 */
+		.day-is-holiday .fc-daygrid-day-frame {
+			background-color: var(--danger-soft) !important;
+		}
+
+		.day-is-holiday .fc-daygrid-day-number {
+			color: var(--danger) !important;
+			font-weight: 800 !important;
+		}
+
+		.holiday-dot {
+			width: 5px;
+			height: 5px;
+			background-color: var(--danger);
+			border-radius: 50%;
+			margin-top: 4px;
+		}
+
+		.fc-daygrid-day-events {
+			display: none !important;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="app-container">
+
+		<!-- 로그인 화면 -->
+		<div id="auth-view">
+			<div class="auth-card">
+				<h2>근무 캘린더</h2>
+				<p>비밀번호를 입력하여 잠금을 해제하세요.</p>
+				<form id="login-form">
+					<!-- 삼성패스/브라우저 비밀번호 저장 연동용 숨겨진 ID -->
+					<input type="text" id="username" name="username" value="worker@local.com" autocomplete="username"
+						style="display:none;">
+					<input type="password" id="password" name="password" placeholder="비밀번호 입력"
+						autocomplete="current-password" required autofocus>
+					<button type="submit">잠금 해제</button>
+				</form>
+			</div>
+		</div>
+
+		<!-- 메인 캘린더 화면 -->
+		<div id="main-view">
+			<header>
+				<div class="header-left">
+					<!-- 미니멀 캘린더 아이콘 뱃지 포인트 -->
+					<div class="app-icon-badge">
+						<svg viewBox="0 0 24 24">
+							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+							<line x1="16" y1="2" x2="16" y2="6"></line>
+							<line x1="8" y1="2" x2="8" y2="6"></line>
+							<line x1="3" y1="10" x2="21" y2="10"></line>
+						</svg>
+					</div>
+					<span class="app-title">근무 캘린더</span>
+				</div>
+				<!-- 심플 로그아웃 아이콘 -->
+				<button class="logout-btn" id="btn-logout" title="로그아웃">
+					<svg viewBox="0 0 24 24">
+						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+						<polyline points="16 17 21 12 16 7"></polyline>
+						<line x1="21" y1="12" x2="9" y2="12"></line>
+					</svg>
+				</button>
+			</header>
+
+			<!-- 요약 통계 -->
+			<div class="summary-card">
+				<div class="summary-item">
+					<div class="label">이달의 근무일수</div>
+					<div class="value" id="stat-work-days">0일</div>
+				</div>
+				<div class="summary-item">
+					<div class="label">이달의 휴일수</div>
+					<div class="value danger" id="stat-leave-days">0일</div>
+				</div>
+			</div>
+
+			<!-- 상단 슬림 휴일 편집 모드 스위치 (접속/새로고침 시 조회 모드 기본값) -->
+			<div class="mode-bar" id="mode-bar">
+				<div class="mode-label" id="mode-label">
+					<span>🔒 조회 모드 (터치 안전)</span>
+				</div>
+				<label class="toggle-switch">
+					<input type="checkbox" id="edit-mode-toggle">
+					<span class="slider"></span>
+				</label>
+			</div>
+
+			<!-- 캘린더 영역 (플랫 미니멀) -->
+			<div class="calendar-wrapper">
+				<div id="calendar"></div>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Firebase SDK -->
+	<script type="module">
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+		import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+		import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+		const firebaseConfig = {
+			apiKey: "AIzaSyB_np116NPKVQ6I9Hwn_Y_gBTGE85pz9a0",
+			authDomain: "my-work-schedule-4e63e.firebaseapp.com",
+			projectId: "my-work-schedule-4e63e",
+			storageBucket: "my-work-schedule-4e63e.firebasestorage.app",
+			messagingSenderId: "737791611403",
+			appId: "1:737791611403:web:ebd21efcc853c0a825ed0e"
+		};
+
+		const app = initializeApp(firebaseConfig);
+		const auth = getAuth(app);
+		const db = getFirestore(app);
+
+		let currentUser = null;
+		let calendar = null;
+		let records = {};
+		let currentViewingDate = new Date();
+
+		const authView = document.getElementById('auth-view');
+		const mainView = document.getElementById('main-view');
+		const loginForm = document.getElementById('login-form');
+		const passwordInput = document.getElementById('password');
+		const editModeToggle = document.getElementById('edit-mode-toggle');
+		const modeBar = document.getElementById('mode-bar');
+		const modeLabel = document.getElementById('mode-label');
+
+		// 무조건 조회 모드로 기본 초기화
+		function resetToViewMode() {
+			editModeToggle.checked = false;
+			modeBar.classList.remove('active');
+			modeLabel.innerHTML = `<span>🔒 조회 모드 (터치 안전)</span>`;
+		}
+
+		// 편집 모드 토글 피드백
+		editModeToggle.addEventListener('change', (e) => {
+			if (e.target.checked) {
+				modeBar.classList.add('active');
+				modeLabel.innerHTML = `<span>⚡ 휴일 편집 모드 ON (터치 시 변경)</span>`;
+			} else {
+				resetToViewMode();
+			}
+		});
+
+		// 인증 상태 감지 (로컬 캐시 자동 세션 유지)
+		onAuthStateChanged(auth, (user) => {
+			currentUser = user;
+			if (user) {
+				authView.style.display = 'none';
+				mainView.style.display = 'flex';
+				resetToViewMode();
+				initCalendar();
+				listenToRecords();
+			} else {
+				authView.style.display = 'flex';
+				mainView.style.display = 'none';
+				if (calendar) { calendar.destroy(); calendar = null; }
+			}
+		});
+
+		loginForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			try {
+				await signInWithEmailAndPassword(auth, "worker@local.com", passwordInput.value);
+			} catch (err) {
+				alert("비밀번호가 올바르지 않습니다.");
+			}
+		});
+
+		document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+		function initCalendar() {
+			const calendarEl = document.getElementById('calendar');
+			calendar = new FullCalendar.Calendar(calendarEl, {
+				initialView: 'dayGridMonth',
+				locale: 'ko',
+				height: 'auto',
+				headerToolbar: {
+					left: 'prev,next today',
+					center: 'title',
+					right: '' // 월간 단일 뷰 고정
+				},
+				buttonText: {
+					today: '오늘'
+				},
+				datesSet: (dateInfo) => {
+					currentViewingDate = new Date(dateInfo.view.currentStart);
+					currentViewingDate.setDate(currentViewingDate.getDate() + 10);
+					updateStats();
+				},
+				dayCellDidMount: (arg) => {
+					const dateStr = FullCalendar.formatDate(arg.date, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '-').replace('.', '');
+					applyHolidayStyle(arg.el, dateStr);
+				},
+				dateClick: (info) => {
+					if (!editModeToggle.checked) return; // 조회 모드일 때는 터치 무시
+					toggleSingleHoliday(info.dateStr);
+				}
+			});
+			calendar.render();
+		}
+
+		// 휴일 틴트 및 미니 도트 적용
+		function applyHolidayStyle(cellEl, dateStr) {
+			const existingDot = cellEl.querySelector('.holiday-dot');
+			if (existingDot) existingDot.remove();
+
+			if (records[dateStr] && records[dateStr].status === 'LEAVE') {
+				cellEl.classList.add('day-is-holiday');
+				const frame = cellEl.querySelector('.fc-daygrid-day-frame');
+				if (frame) {
+					const dot = document.createElement('div');
+					dot.className = 'holiday-dot';
+					frame.appendChild(dot);
+				}
+			} else {
+				cellEl.classList.remove('day-is-holiday');
+			}
+		}
+
+		// Firestore 실시간 감지
+		function listenToRecords() {
+			if (!currentUser) return;
+			const recordsCol = collection(db, "users", currentUser.uid, "records");
+			onSnapshot(recordsCol, (snapshot) => {
+				records = {};
+				snapshot.forEach(docSnap => {
+					records[docSnap.id] = docSnap.data();
+				});
+
+				document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+					const dateStr = cell.getAttribute('data-date');
+					if (dateStr) applyHolidayStyle(cell, dateStr);
+				});
+
+				updateStats();
+			});
+		}
+
+		// 통계 계산: 이달 총 일수 - 등록 휴일 수 = 근무일수
+		function updateStats() {
+			const year = currentViewingDate.getFullYear();
+			const month = currentViewingDate.getMonth();
+			const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+			let holidayCount = 0;
+			for (let day = 1; day <= totalDaysInMonth; day++) {
+				const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+				if (records[dStr] && records[dStr].status === 'LEAVE') {
+					holidayCount++;
+				}
+			}
+
+			const workDays = totalDaysInMonth - holidayCount;
+			document.getElementById('stat-work-days').textContent = `${workDays}일`;
+			document.getElementById('stat-leave-days').textContent = `${holidayCount}일`;
+		}
+
+		// 단일 날짜 휴일 토글
+		async function toggleSingleHoliday(dateStr) {
+			if (!currentUser) return;
+			const docRef = doc(db, "users", currentUser.uid, "records", dateStr);
+			if (records[dateStr] && records[dateStr].status === 'LEAVE') {
+				await deleteDoc(docRef);
+			} else {
+				await setDoc(docRef, { date: dateStr, status: 'LEAVE', updatedAt: new Date() });
+			}
+		}
+	</script>
+
+</body>
+
+</html>
