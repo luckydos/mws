@@ -28,13 +28,15 @@
 			--primary-soft: #eff6ff;
 			--danger: #ef4444;
 			/* 피로도를 줄인 맑고 은은한 코랄 틴트 (4~5% 수준) */
-			--danger-soft: rgba(239, 68, 68, 0.05);
+			--danger-soft: rgba(239, 68, 68, 0.06);
 			--border: #f1f5f9;
 			--card-border: #e2e8f0;
 			--text: #0f172a;
-			--text-muted: #94a3b8;
-			/* 차분한 주말용 뮤트 그레이 */
 			--text-sub: #64748b;
+			/* 차분한 주말/보조용 뮤트 그레이 */
+			--text-muted: #94a3b8;
+			/* 이전/다음 달 전용 페일 그레이 */
+			--text-other: #cbd5e1;
 		}
 
 		* {
@@ -43,7 +45,6 @@
 			padding: 0;
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 			-webkit-tap-highlight-color: transparent;
-			/* 모바일 전역 탭 하이라이트 잔상 제거 */
 		}
 
 		body {
@@ -65,9 +66,10 @@
 			flex-direction: column;
 			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 			position: relative;
+			overflow-x: hidden;
 		}
 
-		/* 🌟 초기 인증 안내 (로딩 스플래시) 화면 */
+		/* 초기 인증 안내 (로딩 스플래시) 화면 */
 		#loading-view {
 			display: flex;
 			flex-direction: column;
@@ -125,7 +127,7 @@
 			color: var(--text-sub);
 		}
 
-		/* 로그인 화면 (기본 display: none) */
+		/* 로그인 화면 */
 		#auth-view {
 			display: none;
 			flex-direction: column;
@@ -183,7 +185,7 @@
 			flex: 1;
 		}
 
-		/* 상단 헤더: 미니멀 컬러 뱃지 + 타이틀 + 로그아웃 아이콘 */
+		/* 상단 헤더 */
 		header {
 			padding: 16px 20px;
 			border-bottom: 1px solid var(--border);
@@ -251,7 +253,7 @@
 		/* 통계 요약 바 */
 		.summary-card {
 			padding: 12px 18px;
-			margin: 12px 16px 8px 16px;
+			margin: 12px 16px 10px 16px;
 			background: #f8fafc;
 			border: 1px solid var(--card-border);
 			border-radius: 14px;
@@ -277,10 +279,11 @@
 			color: var(--danger);
 		}
 
-		/* 슬림 편집 모드 토글 바 */
+		/* 슬림 편집 모드 토글 바 (높이 완전 고정) */
 		.mode-bar {
 			margin: 0 16px 12px 16px;
-			padding: 8px 14px;
+			padding: 8px 12px;
+			height: 44px;
 			background: #ffffff;
 			border: 1px solid var(--card-border);
 			border-radius: 10px;
@@ -302,13 +305,49 @@
 			display: flex;
 			align-items: center;
 			gap: 6px;
+			white-space: nowrap;
 		}
 
 		.mode-bar.active .mode-label {
 			color: var(--danger);
 		}
 
-		/* 토글 스위치 잔상 완전 제거 */
+		.mode-right-group {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		/* 인라인 이달 초기화 버튼 */
+		.btn-clear-inline {
+			display: none;
+			align-items: center;
+			gap: 4px;
+			padding: 4px 8px;
+			font-size: 0.74rem;
+			font-weight: 700;
+			color: var(--danger);
+			background: #ffffff;
+			border: 1px solid rgba(239, 68, 68, 0.3);
+			border-radius: 6px;
+			cursor: pointer;
+			white-space: nowrap;
+			transition: background-color 0.15s;
+		}
+
+		.btn-clear-inline:active {
+			background: #fee2e2;
+		}
+
+		.btn-clear-inline svg {
+			width: 12px;
+			height: 12px;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 2;
+		}
+
+		/* 토글 스위치 */
 		.toggle-switch {
 			position: relative;
 			display: inline-block;
@@ -317,6 +356,7 @@
 			-webkit-tap-highlight-color: transparent;
 			outline: none;
 			user-select: none;
+			flex-shrink: 0;
 		}
 
 		.toggle-switch input {
@@ -361,7 +401,7 @@
 			transform: translateX(18px);
 		}
 
-		/* 달력 전체를 감싸는 카드 박스 */
+		/* 달력 전체 카드 박스 */
 		.calendar-wrapper {
 			margin: 0 16px 20px 16px;
 			padding: 14px 10px;
@@ -370,13 +410,14 @@
 			border-radius: 16px;
 			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 			user-select: none;
+			touch-action: pan-y;
+			overflow: hidden;
 		}
 
 		.fc {
 			font-size: 0.85rem;
 		}
 
-		/* 툴바 */
 		.fc .fc-toolbar {
 			margin-bottom: 12px !important;
 			align-items: center;
@@ -420,7 +461,7 @@
 			background: #e2e8f0 !important;
 		}
 
-		/* 요일 헤더 */
+		/* 요일 헤더: 차분하고 모던한 뮤트 그레이 톤 */
 		.fc-col-header {
 			width: 100% !important;
 		}
@@ -434,7 +475,6 @@
 			color: var(--text-sub);
 		}
 
-		/* 내부 테두리 선 정리 */
 		.fc-theme-standard .fc-scrollgrid {
 			border: none !important;
 		}
@@ -453,7 +493,6 @@
 			width: 100% !important;
 		}
 
-		/* 개별 날짜 카드 형태 */
 		.fc-daygrid-day-frame {
 			min-height: 64px !important;
 			padding: 6px 2px !important;
@@ -464,18 +503,17 @@
 			border-radius: 12px;
 			margin: 2px 1px;
 			background-color: transparent;
-			/* ✨ 부드러운 스케일 축소 효과를 위한 트랜지션 */
 			transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 			-webkit-tap-highlight-color: transparent;
 		}
 
-		/* 🔒 기본 조회 모드: 날짜 셀 터치 및 포인터 이벤트 원천 차단 */
+		/* 🔒 조회 모드: 날짜 셀 터치 차단 */
 		.calendar-wrapper .fc-daygrid-body {
 			pointer-events: none;
 			cursor: default;
 		}
 
-		/* ⚡ 편집 모드 활성화 시: 날짜 셀 클릭/터치 활성화 */
+		/* ⚡ 편집 모드: 날짜 셀 활성화 */
 		.calendar-wrapper.edit-active .fc-daygrid-body {
 			pointer-events: auto;
 			cursor: pointer;
@@ -485,7 +523,6 @@
 			cursor: pointer;
 		}
 
-		/* ✨ 편집 모드 터치 피드백 애니메이션: 0.93배 축소 및 코랄 틴트 배경 */
 		.calendar-wrapper.edit-active .fc-daygrid-day-frame:active {
 			transform: scale(0.93);
 			background-color: rgba(239, 68, 68, 0.12) !important;
@@ -497,7 +534,7 @@
 			margin-bottom: 4px;
 		}
 
-		/* 평일 날짜 */
+		/* 🌟 1. 이번 달 평일 날짜 */
 		.fc-daygrid-day-number {
 			font-size: 0.85rem !important;
 			font-weight: 600;
@@ -505,19 +542,29 @@
 			color: var(--text);
 		}
 
-		/* 주말(토/일) 색상: 뮤트 그레이 */
+		/* 🌟 2. 이번 달 주말 (토/일) 날짜: 부드러운 뮤트 그레이 톤으로 레드를 일절 배제 */
 		.fc-day-sun .fc-daygrid-day-number,
 		.fc-day-sat .fc-daygrid-day-number {
 			color: var(--text-muted) !important;
 			font-weight: 500;
 		}
 
-		/* 누런 기본 배경 제거 */
+		/* 🌟 3. 이전 달 / 다음 달 날짜: 연한 페일 그레이 + 투명도 다운 */
+		.fc-day-other .fc-daygrid-day-number {
+			color: #94a3b8 !important; /* 명확히 보이는 차분한 그레이 */
+			font-weight: 400 !important;
+			opacity: 0.75 !important;
+		}
+
+		.fc-day-other .fc-daygrid-day-frame {
+			opacity: 1 !important; /* 부모 프레임 투명도 제거 */
+		}
+
+		/* 오늘 날짜 표시 */
 		.fc-day-today {
 			background-color: transparent !important;
 		}
 
-		/* 오늘 날짜 표시: 테두리 라인 + 블루 텍스트 */
 		.fc-day-today .fc-daygrid-day-frame {
 			border: 1.5px solid var(--primary) !important;
 			background-color: #fafcff;
@@ -528,7 +575,7 @@
 			font-weight: 800 !important;
 		}
 
-		/* 휴일 스타일: 은은한 파스텔 틴트 + 레드 숫자 + 미니 레드 도트 */
+		/* 🌟 4. 휴일 스타일: 오직 '등록된 휴일'만 선명한 코랄 레드를 독점 */
 		.day-is-holiday .fc-daygrid-day-frame {
 			background-color: var(--danger-soft) !important;
 		}
@@ -536,6 +583,8 @@
 		.day-is-holiday .fc-daygrid-day-number {
 			color: var(--danger) !important;
 			font-weight: 800 !important;
+			opacity: 1 !important;
+			/* 다른 달에 걸쳐 있어도 휴일이면 선명하게 표시 */
 		}
 
 		.holiday-dot {
@@ -549,6 +598,147 @@
 		.fc-daygrid-day-events {
 			display: none !important;
 		}
+
+		/* 달력 스와이프 슬라이드 전환 애니메이션 */
+		.anim-slide-left {
+			animation: slideFromRight 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+		}
+
+		.anim-slide-right {
+			animation: slideFromLeft 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+		}
+
+		@keyframes slideFromRight {
+			from {
+				opacity: 0.4;
+				transform: translateX(36px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes slideFromLeft {
+			from {
+				opacity: 0.4;
+				transform: translateX(-36px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		/* 커스텀 확인 모달 팝업 */
+		.modal-backdrop {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(15, 23, 42, 0.4);
+			backdrop-filter: blur(2px);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			z-index: 1000;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.2s ease;
+		}
+
+		.modal-backdrop.open {
+			opacity: 1;
+			pointer-events: auto;
+		}
+
+		.modal-card {
+			width: 100%;
+			max-width: 320px;
+			background: #ffffff;
+			border-radius: 18px;
+			padding: 22px 20px 18px 20px;
+			text-align: center;
+			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+			transform: scale(0.92) translateY(10px);
+			transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+		}
+
+		.modal-backdrop.open .modal-card {
+			transform: scale(1) translateY(0);
+		}
+
+		.modal-icon-badge {
+			width: 44px;
+			height: 44px;
+			background: #fee2e2;
+			color: var(--danger);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin: 0 auto 12px auto;
+		}
+
+		.modal-icon-badge svg {
+			width: 22px;
+			height: 22px;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 2.2;
+		}
+
+		.modal-title {
+			font-size: 1.05rem;
+			font-weight: 800;
+			color: var(--text);
+			margin-bottom: 6px;
+		}
+
+		.modal-message {
+			font-size: 0.85rem;
+			color: var(--text-sub);
+			line-height: 1.45;
+			margin-bottom: 20px;
+		}
+
+		.modal-buttons {
+			display: flex;
+			gap: 8px;
+		}
+
+		.modal-btn {
+			flex: 1;
+			padding: 11px;
+			border-radius: 10px;
+			font-size: 0.9rem;
+			font-weight: 700;
+			border: none;
+			cursor: pointer;
+			transition: background-color 0.15s;
+		}
+
+		.modal-btn-cancel {
+			background: #f1f5f9;
+			color: var(--text-sub);
+		}
+
+		.modal-btn-cancel:active {
+			background: #e2e8f0;
+		}
+
+		.modal-btn-confirm {
+			background: var(--danger);
+			color: #ffffff;
+		}
+
+		.modal-btn-confirm:active {
+			background: #dc2626;
+		}
 	</style>
 </head>
 
@@ -556,7 +746,7 @@
 
 	<div class="app-container">
 
-		<!-- 🌟 1. 초기 인증 안내 화면 (로딩 스플래시) -->
+		<!-- 1. 초기 인증 안내 화면 (로딩 스플래시) -->
 		<div id="loading-view">
 			<div class="loading-icon-badge">
 				<svg viewBox="0 0 24 24">
@@ -571,7 +761,7 @@
 			<div class="loading-desc">사용자 인증을 확인하고 있습니다...</div>
 		</div>
 
-		<!-- 2. 로그인 화면 (비로그인 확인 시에만 노출) -->
+		<!-- 2. 로그인 화면 -->
 		<div id="auth-view">
 			<div class="auth-card">
 				<h2>근무 캘린더</h2>
@@ -621,15 +811,26 @@
 				</div>
 			</div>
 
-			<!-- 상단 슬림 휴일 편집 모드 스위치 -->
+			<!-- 상단 슬림 휴일 편집 모드 스위치 + 인라인 초기화 버튼 -->
 			<div class="mode-bar" id="mode-bar">
 				<div class="mode-label" id="mode-label">
-					<span>🔒 조회 모드 (터치 안전)</span>
+					<span>🔒 조회 모드</span>
 				</div>
-				<label class="toggle-switch">
-					<input type="checkbox" id="edit-mode-toggle">
-					<span class="slider"></span>
-				</label>
+				<div class="mode-right-group">
+					<!-- 편집 모드일 때만 나타나는 인라인 초기화 버튼 -->
+					<button type="button" class="btn-clear-inline" id="btn-clear-month">
+						<svg viewBox="0 0 24 24">
+							<polyline points="3 6 5 6 21 6"></polyline>
+							<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+							</path>
+						</svg>
+						<span>초기화</span>
+					</button>
+					<label class="toggle-switch">
+						<input type="checkbox" id="edit-mode-toggle">
+						<span class="slider"></span>
+					</label>
+				</div>
 			</div>
 
 			<!-- 달력 전체를 감싸는 카드 박스 -->
@@ -640,11 +841,29 @@
 
 	</div>
 
+	<!-- 커스텀 확인 모달 팝업 -->
+	<div class="modal-backdrop" id="confirm-modal">
+		<div class="modal-card">
+			<div class="modal-icon-badge">
+				<svg viewBox="0 0 24 24">
+					<polyline points="3 6 5 6 21 6"></polyline>
+					<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+				</svg>
+			</div>
+			<div class="modal-title" id="modal-title">휴일 초기화</div>
+			<div class="modal-message" id="modal-message">등록된 모든 휴일을 초기화할까요?</div>
+			<div class="modal-buttons">
+				<button type="button" class="modal-btn modal-btn-cancel" id="modal-btn-cancel">취소</button>
+				<button type="button" class="modal-btn modal-btn-confirm" id="modal-btn-confirm">삭제</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Firebase SDK -->
 	<script type="module">
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 		import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-		import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+		import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 		const firebaseConfig = {
 			apiKey: "AIzaSyB_np116NPKVQ6I9Hwn_Y_gBTGE85pz9a0",
@@ -663,7 +882,7 @@
 		let calendar = null;
 		let records = {};
 		let currentViewingDate = new Date();
-		let unsubscribeRecords = null; // Firestore 실시간 리스너 해제용
+		let unsubscribeRecords = null;
 
 		const loadingView = document.getElementById('loading-view');
 		const authView = document.getElementById('auth-view');
@@ -673,9 +892,17 @@
 		const editModeToggle = document.getElementById('edit-mode-toggle');
 		const modeBar = document.getElementById('mode-bar');
 		const modeLabel = document.getElementById('mode-label');
+		const btnClearMonth = document.getElementById('btn-clear-month');
 		const calendarWrapper = document.getElementById('calendar-wrapper');
 
-		// Service Worker 등록 (PWA 지원)
+		// 모달 관련 요소
+		const confirmModal = document.getElementById('confirm-modal');
+		const modalMessage = document.getElementById('modal-message');
+		const modalBtnCancel = document.getElementById('modal-btn-cancel');
+		const modalBtnConfirm = document.getElementById('modal-btn-confirm');
+		let modalResolver = null;
+
+		// Service Worker 등록
 		if ('serviceWorker' in navigator) {
 			window.addEventListener('load', () => {
 				navigator.serviceWorker.register('./service-worker.js').catch(() => { });
@@ -686,23 +913,24 @@
 			editModeToggle.checked = false;
 			modeBar.classList.remove('active');
 			calendarWrapper.classList.remove('edit-active');
-			modeLabel.innerHTML = `<span>🔒 조회 모드 (터치 안전)</span>`;
+			btnClearMonth.style.display = 'none';
+			modeLabel.innerHTML = `<span>🔒 조회 모드</span>`;
 		}
 
 		editModeToggle.addEventListener('change', (e) => {
 			if (e.target.checked) {
 				modeBar.classList.add('active');
 				calendarWrapper.classList.add('edit-active');
-				modeLabel.innerHTML = `<span>⚡ 휴일 편집 모드 ON (터치 시 변경)</span>`;
+				btnClearMonth.style.display = 'inline-flex';
+				modeLabel.innerHTML = `<span>⚡ 편집 모드</span>`;
 			} else {
 				resetToViewMode();
 			}
 		});
 
-		// 인증 상태 변화 감지 및 뷰 전환
 		onAuthStateChanged(auth, (user) => {
 			currentUser = user;
-			loadingView.style.display = 'none'; // 인증 판별 완료 시 로딩 뷰 숨김
+			loadingView.style.display = 'none';
 
 			if (user) {
 				authView.style.display = 'none';
@@ -748,15 +976,11 @@
 					today: '오늘'
 				},
 				datesSet: () => {
-					// 달력의 현재 실제 기준 일자를 참조
 					currentViewingDate = calendar.getDate();
-
-					// 달 이동 시 새로 그려진 날짜 칸들에 휴일 스타일 즉시 재적용
 					setTimeout(refreshAllCellStyles, 0);
 					updateStats();
 				},
 				dayCellDidMount: (arg) => {
-					// data-date 속성을 활용하여 안전하게 추출
 					const dateStr = arg.el.getAttribute('data-date');
 					if (dateStr) {
 						applyHolidayStyle(arg.el, dateStr);
@@ -768,7 +992,109 @@
 				}
 			});
 			calendar.render();
+			setupSwipeGesture();
 		}
+
+		function triggerCalendarTransition(direction) {
+			const targetEl = calendarWrapper.querySelector('.fc-daygrid-body');
+			if (!targetEl) return;
+
+			targetEl.classList.remove('anim-slide-left', 'anim-slide-right');
+			void targetEl.offsetWidth;
+
+			if (direction === 'next') {
+				targetEl.classList.add('anim-slide-left');
+			} else {
+				targetEl.classList.add('anim-slide-right');
+			}
+		}
+
+		function setupSwipeGesture() {
+			let touchStartX = 0;
+			let touchStartY = 0;
+
+			calendarWrapper.addEventListener('touchstart', (e) => {
+				touchStartX = e.changedTouches[0].clientX;
+				touchStartY = e.changedTouches[0].clientY;
+			}, { passive: true });
+
+			calendarWrapper.addEventListener('touchend', (e) => {
+				if (editModeToggle.checked || !calendar) return;
+
+				const touchEndX = e.changedTouches[0].clientX;
+				const touchEndY = e.changedTouches[0].clientY;
+				const diffX = touchEndX - touchStartX;
+				const diffY = touchEndY - touchStartY;
+
+				if (Math.abs(diffX) > 55 && Math.abs(diffX) > Math.abs(diffY)) {
+					if (diffX < 0) {
+						calendar.next();
+						triggerCalendarTransition('next');
+					} else {
+						calendar.prev();
+						triggerCalendarTransition('prev');
+					}
+				}
+			}, { passive: true });
+		}
+
+		function showCustomConfirm(message) {
+			return new Promise((resolve) => {
+				modalMessage.textContent = message;
+				confirmModal.classList.add('open');
+				modalResolver = resolve;
+			});
+		}
+
+		function closeModal(result) {
+			confirmModal.classList.remove('open');
+			if (modalResolver) {
+				modalResolver(result);
+				modalResolver = null;
+			}
+		}
+
+		modalBtnCancel.addEventListener('click', () => closeModal(false));
+		modalBtnConfirm.addEventListener('click', () => closeModal(true));
+		confirmModal.addEventListener('click', (e) => {
+			if (e.target === confirmModal) closeModal(false);
+		});
+
+		btnClearMonth.addEventListener('click', async () => {
+			if (!currentUser || !editModeToggle.checked) return;
+
+			const year = currentViewingDate.getFullYear();
+			const month = currentViewingDate.getMonth();
+			const totalDays = new Date(year, month + 1, 0).getDate();
+			const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+			const holidaysToDelete = [];
+			for (let day = 1; day <= totalDays; day++) {
+				const dStr = `${monthPrefix}-${String(day).padStart(2, '0')}`;
+				if (records[dStr] && records[dStr].status === 'LEAVE') {
+					holidaysToDelete.push(dStr);
+				}
+			}
+
+			if (holidaysToDelete.length === 0) {
+				alert("현재 달에 등록된 휴일이 없습니다.");
+				return;
+			}
+
+			const confirmed = await showCustomConfirm(`${year}년 ${month + 1}월의 휴일(${holidaysToDelete.length}일)을 모두 초기화할까요?`);
+			if (!confirmed) return;
+
+			try {
+				const batch = writeBatch(db);
+				holidaysToDelete.forEach(dStr => {
+					const docRef = doc(db, "users", currentUser.uid, "records", dStr);
+					batch.delete(docRef);
+				});
+				await batch.commit();
+			} catch (err) {
+				alert("휴일 초기화 중 오류가 발생했습니다.");
+			}
+		});
 
 		function applyHolidayStyle(cellEl, dateStr) {
 			const existingDot = cellEl.querySelector('.holiday-dot');
@@ -796,7 +1122,7 @@
 
 		function listenToRecords() {
 			if (!currentUser) return;
-			if (unsubscribeRecords) unsubscribeRecords(); // 이전 리스너 중복 방지
+			if (unsubscribeRecords) unsubscribeRecords();
 
 			const recordsCol = collection(db, "users", currentUser.uid, "records");
 			unsubscribeRecords = onSnapshot(recordsCol, (snapshot) => {
