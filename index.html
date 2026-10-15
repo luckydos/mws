@@ -8,11 +8,11 @@
 
 	<!-- 파비콘 및 홈 화면 아이콘 -->
 	<link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192.png">
-	
+
 	<!-- PWA Manifest 연결 -->
 	<link rel="manifest" href="./manifest.json">
 	<meta name="theme-color" content="#2563eb">
-	
+
 	<!-- iOS 사파리 홈화면 추가 대응 -->
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -42,6 +42,8 @@
 			margin: 0;
 			padding: 0;
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			-webkit-tap-highlight-color: transparent;
+			/* 모바일 전역 탭 하이라이트 잔상 제거 */
 		}
 
 		body {
@@ -50,6 +52,8 @@
 			display: flex;
 			justify-content: center;
 			min-height: 100vh;
+			-webkit-touch-callout: none;
+			user-select: none;
 		}
 
 		.app-container {
@@ -99,6 +103,7 @@
 			outline: none;
 			margin-bottom: 12px;
 			text-align: center;
+			user-select: auto;
 		}
 
 		.auth-card button {
@@ -245,17 +250,23 @@
 			color: var(--danger);
 		}
 
+		/* 토글 스위치 잔상 완전 제거 */
 		.toggle-switch {
 			position: relative;
 			display: inline-block;
 			width: 40px;
 			height: 22px;
+			-webkit-tap-highlight-color: transparent;
+			outline: none;
+			user-select: none;
 		}
 
 		.toggle-switch input {
 			opacity: 0;
 			width: 0;
 			height: 0;
+			outline: none;
+			position: absolute;
 		}
 
 		.slider {
@@ -268,6 +279,8 @@
 			background-color: #cbd5e1;
 			transition: .25s;
 			border-radius: 22px;
+			-webkit-tap-highlight-color: transparent;
+			outline: none;
 		}
 
 		.slider:before {
@@ -290,7 +303,7 @@
 			transform: translateX(18px);
 		}
 
-		/* 🌟 달력 전체를 감싸는 카드 박스 (방식 1 적용) */
+		/* 🌟 달력 전체를 감싸는 카드 박스 */
 		.calendar-wrapper {
 			margin: 0 16px 20px 16px;
 			padding: 14px 10px;
@@ -298,6 +311,7 @@
 			border: 1px solid var(--card-border);
 			border-radius: 16px;
 			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+			user-select: none;
 		}
 
 		.fc {
@@ -341,6 +355,7 @@
 			border: 1px solid var(--card-border) !important;
 			color: var(--text) !important;
 			box-shadow: none !important;
+			-webkit-tap-highlight-color: transparent;
 		}
 
 		.fc .fc-button:active {
@@ -361,7 +376,7 @@
 			color: var(--text-sub);
 		}
 
-		/* 내부의 빽빽한 표 선들은 모두 제거하여 시원함 유지 */
+		/* 내부 테두리 선 정리 */
 		.fc-theme-standard .fc-scrollgrid {
 			border: none !important;
 		}
@@ -388,11 +403,27 @@
 			flex-direction: column;
 			justify-content: flex-start;
 			align-items: center;
-			cursor: pointer;
 			border-radius: 12px;
 			margin: 2px 1px;
 			background-color: transparent;
 			transition: background-color 0.15s ease, border-color 0.15s ease;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		/* 🔒 기본 조회 모드: 날짜 셀 터치 및 포인터 이벤트 원천 차단 */
+		.calendar-wrapper .fc-daygrid-body {
+			pointer-events: none;
+			cursor: default;
+		}
+
+		/* ⚡ 편집 모드 활성화 시: 날짜 셀 클릭/터치 활성화 */
+		.calendar-wrapper.edit-active .fc-daygrid-body {
+			pointer-events: auto;
+			cursor: pointer;
+		}
+
+		.calendar-wrapper.edit-active .fc-daygrid-day-frame {
+			cursor: pointer;
 		}
 
 		.fc-daygrid-day-top {
@@ -522,7 +553,7 @@
 			</div>
 
 			<!-- 🌟 달력 전체를 감싸는 통일감 있는 카드 박스 -->
-			<div class="calendar-wrapper">
+			<div class="calendar-wrapper" id="calendar-wrapper">
 				<div id="calendar"></div>
 			</div>
 		</div>
@@ -552,6 +583,7 @@
 		let calendar = null;
 		let records = {};
 		let currentViewingDate = new Date();
+		let unsubscribeRecords = null; // Firestore 실시간 리스너 해제용
 
 		const authView = document.getElementById('auth-view');
 		const mainView = document.getElementById('main-view');
@@ -560,6 +592,7 @@
 		const editModeToggle = document.getElementById('edit-mode-toggle');
 		const modeBar = document.getElementById('mode-bar');
 		const modeLabel = document.getElementById('mode-label');
+		const calendarWrapper = document.getElementById('calendar-wrapper');
 
 		// Service Worker 등록 (PWA 지원)
 		if ('serviceWorker' in navigator) {
@@ -571,12 +604,14 @@
 		function resetToViewMode() {
 			editModeToggle.checked = false;
 			modeBar.classList.remove('active');
+			calendarWrapper.classList.remove('edit-active');
 			modeLabel.innerHTML = `<span>🔒 조회 모드 (터치 안전)</span>`;
 		}
 
 		editModeToggle.addEventListener('change', (e) => {
 			if (e.target.checked) {
 				modeBar.classList.add('active');
+				calendarWrapper.classList.add('edit-active');
 				modeLabel.innerHTML = `<span>⚡ 휴일 편집 모드 ON (터치 시 변경)</span>`;
 			} else {
 				resetToViewMode();
@@ -595,6 +630,11 @@
 				authView.style.display = 'flex';
 				mainView.style.display = 'none';
 				if (calendar) { calendar.destroy(); calendar = null; }
+				if (unsubscribeRecords) {
+					unsubscribeRecords();
+					unsubscribeRecords = null;
+				}
+				records = {};
 			}
 		});
 
@@ -623,17 +663,20 @@
 				buttonText: {
 					today: '오늘'
 				},
-				datesSet: (dateInfo) => {
-					currentViewingDate = new Date(dateInfo.view.currentStart);
-					currentViewingDate.setDate(currentViewingDate.getDate() + 10);
+				datesSet: () => {
+					// 달력의 현재 실제 기준 일자를 정확하게 참조
+					currentViewingDate = calendar.getDate();
 
-					// 🌟 달 이동 시 새로 그려진 날짜 칸들에 휴일 스타일 즉시 재적용
+					// 달 이동 시 새로 그려진 날짜 칸들에 휴일 스타일 즉시 재적용
 					setTimeout(refreshAllCellStyles, 0);
 					updateStats();
 				},
 				dayCellDidMount: (arg) => {
-					const dateStr = FullCalendar.formatDate(arg.date, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '-').replace('.', '');
-					applyHolidayStyle(arg.el, dateStr);
+					// 기본 data-date 속성을 활용하여 로케일 오차 없이 안전하게 추출
+					const dateStr = arg.el.getAttribute('data-date');
+					if (dateStr) {
+						applyHolidayStyle(arg.el, dateStr);
+					}
 				},
 				dateClick: (info) => {
 					if (!editModeToggle.checked) return;
@@ -669,8 +712,10 @@
 
 		function listenToRecords() {
 			if (!currentUser) return;
+			if (unsubscribeRecords) unsubscribeRecords(); // 이전 리스너 중복 방지
+
 			const recordsCol = collection(db, "users", currentUser.uid, "records");
-			onSnapshot(recordsCol, (snapshot) => {
+			unsubscribeRecords = onSnapshot(recordsCol, (snapshot) => {
 				records = {};
 				snapshot.forEach(docSnap => {
 					records[docSnap.id] = docSnap.data();
