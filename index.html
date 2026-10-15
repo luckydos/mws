@@ -8,27 +8,16 @@
 
 	<!-- 파비콘 및 홈 화면 아이콘 -->
 	<link rel="icon" type="image/png" sizes="192x192" href="./images/icon-192.png">
-
+	
 	<!-- PWA Manifest 연결 -->
 	<link rel="manifest" href="./manifest.json">
 	<meta name="theme-color" content="#2563eb">
-
+	
 	<!-- iOS 사파리 홈화면 추가 대응 -->
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<meta name="apple-mobile-web-app-title" content="근무캘린더">
 	<link rel="apple-touch-icon" sizes="192x192" href="./images/icon-192.png">
-
-	<!-- Service Worker 등록 스크립트 -->
-	<script>
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', () => {
-				navigator.serviceWorker.register('./service-worker.js')
-					.then(reg => console.log('PWA ServiceWorker 등록 성공:', reg.scope))
-					.catch(err => console.log('PWA ServiceWorker 등록 실패:', err));
-			});
-		}
-	</script>
 
 	<!-- FullCalendar CDN -->
 	<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
@@ -41,6 +30,7 @@
 			/* 피로도를 줄인 맑고 은은한 코랄 틴트 (4~5% 수준) */
 			--danger-soft: rgba(239, 68, 68, 0.05);
 			--border: #f1f5f9;
+			--card-border: #e2e8f0;
 			--text: #0f172a;
 			--text-muted: #94a3b8;
 			/* 차분한 주말용 뮤트 그레이 */
@@ -130,7 +120,7 @@
 			flex: 1;
 		}
 
-		/* 🌟 상단 헤더: 미니멀 컬러 뱃지 + 타이틀 + 로그아웃 아이콘 */
+		/* 상단 헤더: 미니멀 컬러 뱃지 + 타이틀 + 로그아웃 아이콘 */
 		header {
 			padding: 16px 20px;
 			border-bottom: 1px solid var(--border);
@@ -200,7 +190,7 @@
 			padding: 12px 18px;
 			margin: 12px 16px 8px 16px;
 			background: #f8fafc;
-			border: 1px solid var(--border);
+			border: 1px solid var(--card-border);
 			border-radius: 14px;
 			display: flex;
 			justify-content: space-around;
@@ -229,7 +219,7 @@
 			margin: 0 16px 12px 16px;
 			padding: 8px 14px;
 			background: #ffffff;
-			border: 1px solid #e2e8f0;
+			border: 1px solid var(--card-border);
 			border-radius: 10px;
 			display: flex;
 			justify-content: space-between;
@@ -300,21 +290,26 @@
 			transform: translateX(18px);
 		}
 
-		/* 🌟 FullCalendar 플랫 미니멀 디자인 (모든 표/외곽선 제거) */
+		/* 🌟 달력 전체를 감싸는 카드 박스 (방식 1 적용) */
 		.calendar-wrapper {
-			padding: 0 10px 20px 10px;
-			flex: 1;
+			margin: 0 16px 20px 16px;
+			padding: 14px 10px;
+			background: #ffffff;
+			border: 1px solid var(--card-border);
+			border-radius: 16px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 		}
 
 		.fc {
 			font-size: 0.85rem;
 		}
 
-		/* 툴바: 월 이동 버튼 간격(Gap) 확보 */
+		/* 툴바: 월 이동 버튼 간격 확보 */
 		.fc .fc-toolbar {
 			margin-bottom: 12px !important;
 			align-items: center;
 			justify-content: space-between;
+			padding: 0 4px;
 		}
 
 		.fc .fc-toolbar-chunk:first-child {
@@ -334,7 +329,7 @@
 		}
 
 		.fc .fc-toolbar-title {
-			font-size: 1.15rem !important;
+			font-size: 1.12rem !important;
 			font-weight: 800;
 		}
 
@@ -343,7 +338,7 @@
 			font-size: 0.8rem !important;
 			border-radius: 8px !important;
 			background: #f8fafc !important;
-			border: 1px solid #e2e8f0 !important;
+			border: 1px solid var(--card-border) !important;
 			color: var(--text) !important;
 			box-shadow: none !important;
 		}
@@ -352,7 +347,7 @@
 			background: #e2e8f0 !important;
 		}
 
-		/* 요일 헤더: 외곽선 제거 */
+		/* 요일 헤더 */
 		.fc-col-header {
 			width: 100% !important;
 		}
@@ -366,7 +361,7 @@
 			color: var(--text-sub);
 		}
 
-		/* 🌟 외곽 및 내부 모든 테이블 테두리 제거 (방법 A 반영) */
+		/* 내부의 빽빽한 표 선들은 모두 제거하여 시원함 유지 */
 		.fc-theme-standard .fc-scrollgrid {
 			border: none !important;
 		}
@@ -387,7 +382,7 @@
 
 		/* 개별 날짜 카드 형태 */
 		.fc-daygrid-day-frame {
-			min-height: 68px !important;
+			min-height: 64px !important;
 			padding: 6px 2px !important;
 			display: flex;
 			flex-direction: column;
@@ -471,7 +466,6 @@
 				<h2>근무 캘린더</h2>
 				<p>비밀번호를 입력하여 잠금을 해제하세요.</p>
 				<form id="login-form">
-					<!-- 삼성패스/브라우저 비밀번호 저장 연동용 숨겨진 ID -->
 					<input type="text" id="username" name="username" value="worker@local.com" autocomplete="username"
 						style="display:none;">
 					<input type="password" id="password" name="password" placeholder="비밀번호 입력"
@@ -485,7 +479,6 @@
 		<div id="main-view">
 			<header>
 				<div class="header-left">
-					<!-- 미니멀 캘린더 아이콘 뱃지 포인트 -->
 					<div class="app-icon-badge">
 						<svg viewBox="0 0 24 24">
 							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -496,7 +489,6 @@
 					</div>
 					<span class="app-title">근무 캘린더</span>
 				</div>
-				<!-- 심플 로그아웃 아이콘 -->
 				<button class="logout-btn" id="btn-logout" title="로그아웃">
 					<svg viewBox="0 0 24 24">
 						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -518,7 +510,7 @@
 				</div>
 			</div>
 
-			<!-- 상단 슬림 휴일 편집 모드 스위치 (접속/새로고침 시 조회 모드 기본값) -->
+			<!-- 상단 슬림 휴일 편집 모드 스위치 -->
 			<div class="mode-bar" id="mode-bar">
 				<div class="mode-label" id="mode-label">
 					<span>🔒 조회 모드 (터치 안전)</span>
@@ -529,7 +521,7 @@
 				</label>
 			</div>
 
-			<!-- 캘린더 영역 (플랫 미니멀) -->
+			<!-- 🌟 달력 전체를 감싸는 통일감 있는 카드 박스 -->
 			<div class="calendar-wrapper">
 				<div id="calendar"></div>
 			</div>
@@ -569,14 +561,19 @@
 		const modeBar = document.getElementById('mode-bar');
 		const modeLabel = document.getElementById('mode-label');
 
-		// 무조건 조회 모드로 기본 초기화
+		// Service Worker 등록 (PWA 지원)
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('./service-worker.js').catch(() => { });
+			});
+		}
+
 		function resetToViewMode() {
 			editModeToggle.checked = false;
 			modeBar.classList.remove('active');
 			modeLabel.innerHTML = `<span>🔒 조회 모드 (터치 안전)</span>`;
 		}
 
-		// 편집 모드 토글 피드백
 		editModeToggle.addEventListener('change', (e) => {
 			if (e.target.checked) {
 				modeBar.classList.add('active');
@@ -586,7 +583,6 @@
 			}
 		});
 
-		// 인증 상태 감지 (로컬 캐시 자동 세션 유지)
 		onAuthStateChanged(auth, (user) => {
 			currentUser = user;
 			if (user) {
@@ -622,7 +618,7 @@
 				headerToolbar: {
 					left: 'prev,next today',
 					center: 'title',
-					right: '' // 월간 단일 뷰 고정
+					right: ''
 				},
 				buttonText: {
 					today: '오늘'
@@ -630,6 +626,9 @@
 				datesSet: (dateInfo) => {
 					currentViewingDate = new Date(dateInfo.view.currentStart);
 					currentViewingDate.setDate(currentViewingDate.getDate() + 10);
+
+					// 🌟 달 이동 시 새로 그려진 날짜 칸들에 휴일 스타일 즉시 재적용
+					setTimeout(refreshAllCellStyles, 0);
 					updateStats();
 				},
 				dayCellDidMount: (arg) => {
@@ -637,14 +636,13 @@
 					applyHolidayStyle(arg.el, dateStr);
 				},
 				dateClick: (info) => {
-					if (!editModeToggle.checked) return; // 조회 모드일 때는 터치 무시
+					if (!editModeToggle.checked) return;
 					toggleSingleHoliday(info.dateStr);
 				}
 			});
 			calendar.render();
 		}
 
-		// 휴일 틴트 및 미니 도트 적용
 		function applyHolidayStyle(cellEl, dateStr) {
 			const existingDot = cellEl.querySelector('.holiday-dot');
 			if (existingDot) existingDot.remove();
@@ -662,7 +660,13 @@
 			}
 		}
 
-		// Firestore 실시간 감지
+		function refreshAllCellStyles() {
+			document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+				const dateStr = cell.getAttribute('data-date');
+				if (dateStr) applyHolidayStyle(cell, dateStr);
+			});
+		}
+
 		function listenToRecords() {
 			if (!currentUser) return;
 			const recordsCol = collection(db, "users", currentUser.uid, "records");
@@ -672,16 +676,11 @@
 					records[docSnap.id] = docSnap.data();
 				});
 
-				document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
-					const dateStr = cell.getAttribute('data-date');
-					if (dateStr) applyHolidayStyle(cell, dateStr);
-				});
-
+				refreshAllCellStyles();
 				updateStats();
 			});
 		}
 
-		// 통계 계산: 이달 총 일수 - 등록 휴일 수 = 근무일수
 		function updateStats() {
 			const year = currentViewingDate.getFullYear();
 			const month = currentViewingDate.getMonth();
@@ -700,7 +699,6 @@
 			document.getElementById('stat-leave-days').textContent = `${holidayCount}일`;
 		}
 
-		// 단일 날짜 휴일 토글
 		async function toggleSingleHoliday(dateStr) {
 			if (!currentUser) return;
 			const docRef = doc(db, "users", currentUser.uid, "records", dateStr);
