@@ -1,6 +1,6 @@
 {
-	"name": "근무 캘린더",
-	"short_name": "근무캘린더",
+	"name": "휴일 캘린더",
+	"short_name": "휴일캘린더",
 	"start_url": "./index.html",
 	"display": "standalone",
 	"background_color": "#ffffff",
