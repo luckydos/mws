@@ -154,19 +154,32 @@
 			margin-bottom: 24px;
 		}
 
+		/* 🌟 아이디 및 비밀번호 입력 필드 */
+		.auth-card input[type="text"],
 		.auth-card input[type="password"] {
 			width: 100%;
 			padding: 14px;
 			border: 1.5px solid #e2e8f0;
 			border-radius: 12px;
-			font-size: 1.05rem;
+			font-size: 1.02rem;
 			outline: none;
-			margin-bottom: 14px;
+			margin-bottom: 12px;
 			text-align: center;
 			user-select: auto;
+			transition: border-color 0.15s, background-color 0.15s;
 		}
 
-		/* 🌟 관리자 로그인 체크박스 영역 */
+		.auth-card input:focus {
+			border-color: var(--primary);
+		}
+
+		.auth-card input[readonly] {
+			background-color: #f1f5f9;
+			color: var(--text-sub);
+			cursor: not-allowed;
+		}
+
+		/* 관리자 로그인 체크박스 영역 */
 		.auth-role-select {
 			display: flex;
 			align-items: center;
@@ -304,7 +317,7 @@
 			color: var(--danger);
 		}
 
-		/* 🌟 슬림 편집 모드 토글 바 (일반 가족 로그인 시 숨김 처리됨) */
+		/* 슬림 편집 모드 토글 바 */
 		.mode-bar {
 			margin: 0 16px 12px 16px;
 			padding: 8px 12px;
@@ -480,10 +493,20 @@
 			color: var(--text) !important;
 			box-shadow: none !important;
 			-webkit-tap-highlight-color: transparent;
+			transition: opacity 0.15s ease;
 		}
 
 		.fc .fc-button:active {
 			background: #e2e8f0 !important;
+		}
+
+		/* 🌟 이번 달일 때 '오늘' 버튼 비활성화 스타일 */
+		.fc .fc-today-button:disabled {
+			opacity: 0.38 !important;
+			cursor: default !important;
+			background: #f1f5f9 !important;
+			border-color: #e2e8f0 !important;
+			color: #94a3b8 !important;
 		}
 
 		/* 요일 헤더: 차분하고 모던한 뮤트 그레이 톤 */
@@ -556,7 +579,7 @@
 		.fc-daygrid-day-top {
 			flex-direction: row !important;
 			justify-content: center !important;
-			margin-bottom: 4px;
+			margin-bottom: 2px;
 		}
 
 		/* 1. 이번 달 평일 날짜 */
@@ -574,7 +597,7 @@
 			font-weight: 500;
 		}
 
-		/* 🌟 3. 이전 달 / 다음 달 날짜: 이중 투명도 제거 및 시인성 복구 */
+		/* 3. 이전 달 / 다음 달 날짜: 이중 투명도 제거 및 시인성 복구 */
 		.fc-day-other .fc-daygrid-day-number {
 			color: var(--text-other) !important;
 			font-weight: 400 !important;
@@ -611,12 +634,38 @@
 			opacity: 1 !important;
 		}
 
-		.holiday-dot {
-			width: 5px;
-			height: 5px;
-			background-color: var(--danger);
-			border-radius: 50%;
-			margin-top: 4px;
+		/* 🌟 심플 라인 체크 아이콘 (✓) 스타일 */
+		.holiday-check-icon {
+			width: 15px;
+			height: 15px;
+			color: var(--danger);
+			margin-top: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			animation: checkPop 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		}
+
+		.holiday-check-icon svg {
+			width: 100%;
+			height: 100%;
+			stroke: currentColor;
+			fill: none;
+			stroke-width: 3;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		@keyframes checkPop {
+			from {
+				transform: scale(0.4);
+				opacity: 0;
+			}
+
+			to {
+				transform: scale(1);
+				opacity: 1;
+			}
 		}
 
 		.fc-daygrid-day-events {
@@ -789,12 +838,15 @@
 		<div id="auth-view">
 			<div class="auth-card">
 				<h2>휴일 캘린더</h2>
-				<p>비밀번호를 입력하여 잠금을 해제하세요.</p>
+				<p>아이디와 비밀번호를 입력해 주세요.</p>
 				<form id="login-form">
+					<!-- 🌟 정식 노출된 아이디 입력 필드 -->
+					<input type="text" id="username" name="username" placeholder="아이디 입력"
+						autocomplete="username" required>
 					<input type="password" id="password" name="password" placeholder="비밀번호 입력"
-						autocomplete="current-password" required autofocus>
+						autocomplete="current-password" required>
 
-					<!-- 🌟 관리자 로그인 체크박스 (기본값: 체크 해제 = 가족 일반 계정) -->
+					<!-- 🌟 관리자 로그인 체크박스 -->
 					<div class="auth-role-select">
 						<input type="checkbox" id="admin-login-checkbox">
 						<label for="admin-login-checkbox">관리자(수정 권한)로 로그인</label>
@@ -846,7 +898,6 @@
 					<span>🔒 조회 모드</span>
 				</div>
 				<div class="mode-right-group">
-					<!-- 편집 모드일 때만 나타나는 인라인 초기화 버튼 -->
 					<button type="button" class="btn-clear-inline" id="btn-clear-month">
 						<svg viewBox="0 0 24 24">
 							<polyline points="3 6 5 6 21 6"></polyline>
@@ -907,8 +958,8 @@
 		const auth = getAuth(app);
 		const db = getFirestore(app);
 
-		// 🌟 공용 캘린더 컬렉션 경로 (계정 구분 없이 하나로 통일)
-		const COMMON_RECORDS_PATH = ["schedules", "hospital_calendar", "records"];
+		// 🌟 공용 캘린더 컬렉션 경로 (work로 변경)
+		const COMMON_RECORDS_PATH = ["schedules", "work", "records"];
 
 		let currentUser = null;
 		let isAdmin = false; // 관리자 여부
@@ -921,6 +972,7 @@
 		const authView = document.getElementById('auth-view');
 		const mainView = document.getElementById('main-view');
 		const loginForm = document.getElementById('login-form');
+		const usernameInput = document.getElementById('username');
 		const passwordInput = document.getElementById('password');
 		const adminLoginCheckbox = document.getElementById('admin-login-checkbox');
 		const editModeToggle = document.getElementById('edit-mode-toggle');
@@ -951,7 +1003,6 @@
 			modeLabel.innerHTML = `<span>🔒 조회 모드</span>`;
 		}
 
-		// 🌟 연필 아이콘 적용
 		editModeToggle.addEventListener('change', (e) => {
 			if (!isAdmin) {
 				resetToViewMode();
@@ -967,7 +1018,20 @@
 			}
 		});
 
-		// 🌟 인증 상태 변화 감지 및 관리자/일반 계정 권한 분기
+		// 🌟 관리자 체크박스 상호작용
+		adminLoginCheckbox.addEventListener('change', (e) => {
+			if (e.target.checked) {
+				usernameInput.value = 'admin';
+				usernameInput.readOnly = true;
+				passwordInput.focus();
+			} else {
+				usernameInput.value = '';
+				usernameInput.readOnly = false;
+				usernameInput.focus();
+			}
+		});
+
+		// 인증 상태 변화 감지 및 관리자/일반 계정 권한 분기
 		onAuthStateChanged(auth, (user) => {
 			currentUser = user;
 			loadingView.style.display = 'none';
@@ -982,7 +1046,7 @@
 				if (isAdmin) {
 					modeBar.style.display = 'flex';
 				} else {
-					modeBar.style.display = 'none'; // 일반 가족 계정은 편집 스위치 바 자체를 숨김
+					modeBar.style.display = 'none';
 				}
 
 				resetToViewMode();
@@ -1001,20 +1065,37 @@
 			}
 		});
 
-		// 🌟 로그인 시 체크박스 상태에 따라 이메일 분기
+		// 🌟 로그인 폼 제출 처리 (아이디 자동 도메인 완성 포함)
 		loginForm.addEventListener('submit', async (e) => {
 			e.preventDefault();
-			const targetEmail = adminLoginCheckbox.checked ? "admin@worker.local" : "family@worker.local";
+			let inputId = usernameInput.value.trim();
+
+			if (!inputId.includes('@')) {
+				inputId = `${inputId}@worker.local`;
+			}
 
 			try {
-				await signInWithEmailAndPassword(auth, targetEmail, passwordInput.value);
+				await signInWithEmailAndPassword(auth, inputId, passwordInput.value);
 				passwordInput.value = '';
 			} catch (err) {
-				alert("비밀번호가 올바르지 않습니다.");
+				alert("아이디 또는 비밀번호가 올바르지 않습니다.");
 			}
 		});
 
 		document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+		// 🌟 현재 달 여부에 따른 '오늘' 버튼 비활성화/활성화 제어 함수
+		function updateTodayButtonState() {
+			const todayBtn = calendarWrapper.querySelector('.fc-today-button');
+			if (!todayBtn) return;
+
+			const now = new Date();
+			const isCurrentMonth =
+				currentViewingDate.getFullYear() === now.getFullYear() &&
+				currentViewingDate.getMonth() === now.getMonth();
+
+			todayBtn.disabled = isCurrentMonth;
+		}
 
 		function initCalendar() {
 			const calendarEl = document.getElementById('calendar');
@@ -1032,7 +1113,10 @@
 				},
 				datesSet: () => {
 					currentViewingDate = calendar.getDate();
-					setTimeout(refreshAllCellStyles, 0);
+					setTimeout(() => {
+						refreshAllCellStyles();
+						updateTodayButtonState();
+					}, 0);
 					updateStats();
 				},
 				dayCellDidMount: (arg) => {
@@ -1042,7 +1126,6 @@
 					}
 				},
 				dateClick: (info) => {
-					// 관리자가 아니거나 편집 모드가 꺼져있으면 클릭 무시
 					if (!isAdmin || !editModeToggle.checked) return;
 					toggleSingleHoliday(info.dateStr);
 				}
@@ -1116,7 +1199,7 @@
 			if (e.target === confirmModal) closeModal(false);
 		});
 
-		// 🌟 공용 경로 기반 당월 휴일 일괄 초기화
+		// 공용 경로 기반 당월 휴일 일괄 초기화
 		btnClearMonth.addEventListener('click', async () => {
 			if (!currentUser || !isAdmin || !editModeToggle.checked) return;
 
@@ -1153,20 +1236,31 @@
 			}
 		});
 
+		// 🌟 1. 상태가 변경된 경우에만 DOM을 수정하도록 개선 (깜빡임 완전 제거)
 		function applyHolidayStyle(cellEl, dateStr) {
-			const existingDot = cellEl.querySelector('.holiday-dot');
-			if (existingDot) existingDot.remove();
+			const isHoliday = records[dateStr] && records[dateStr].status === 'LEAVE';
+			const hasHolidayClass = cellEl.classList.contains('day-is-holiday');
+			const existingIcon = cellEl.querySelector('.holiday-check-icon');
 
-			if (records[dateStr] && records[dateStr].status === 'LEAVE') {
-				cellEl.classList.add('day-is-holiday');
-				const frame = cellEl.querySelector('.fc-daygrid-day-frame');
-				if (frame) {
-					const dot = document.createElement('div');
-					dot.className = 'holiday-dot';
-					frame.appendChild(dot);
+			if (isHoliday) {
+				if (!hasHolidayClass) cellEl.classList.add('day-is-holiday');
+				// 이미 체크 아이콘이 있다면 굳이 지우고 다시 만들지 않음 (애니메이션 재실행 방지)
+				if (!existingIcon) {
+					const frame = cellEl.querySelector('.fc-daygrid-day-frame');
+					if (frame) {
+						const checkIcon = document.createElement('div');
+						checkIcon.className = 'holiday-check-icon';
+						checkIcon.innerHTML = `
+						<svg viewBox="0 0 24 24">
+							<polyline points="20 6 9 17 4 12"></polyline>
+						</svg>
+					`;
+						frame.appendChild(checkIcon);
+					}
 				}
 			} else {
-				cellEl.classList.remove('day-is-holiday');
+				if (hasHolidayClass) cellEl.classList.remove('day-is-holiday');
+				if (existingIcon) existingIcon.remove();
 			}
 		}
 
@@ -1177,7 +1271,6 @@
 			});
 		}
 
-		// 🌟 공용 경로 실시간 리스너 (누구나 동일한 데이터 구독)
 		function listenToRecords() {
 			if (!currentUser) return;
 			if (unsubscribeRecords) unsubscribeRecords();
@@ -1212,7 +1305,6 @@
 			document.getElementById('stat-leave-days').textContent = `${holidayCount}일`;
 		}
 
-		// 🌟 공용 경로 개별 휴일 토글 (관리자 전용)
 		async function toggleSingleHoliday(dateStr) {
 			if (!currentUser || !isAdmin) return;
 			const docRef = doc(db, ...COMMON_RECORDS_PATH, dateStr);
