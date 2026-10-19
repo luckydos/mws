@@ -1151,21 +1151,27 @@
 		function setupSwipeGesture() {
 			let touchStartX = 0;
 			let touchStartY = 0;
+			let isSwiping = false; // 🌟 중복 넘김 방지 잠금 플래그
 
 			calendarWrapper.addEventListener('touchstart', (e) => {
-				touchStartX = e.changedTouches[0].clientX;
-				touchStartY = e.changedTouches[0].clientY;
+				if (e.touches.length > 1) return; // 멀티 터치 방지
+				touchStartX = e.touches[0].clientX;
+				touchStartY = e.touches[0].clientY;
 			}, { passive: true });
 
 			calendarWrapper.addEventListener('touchend', (e) => {
-				if (editModeToggle.checked || !calendar) return;
+				// 편집 모드이거나, 달력이 없거나, 이미 넘기는 중이면 차단
+				if (editModeToggle.checked || !calendar || isSwiping) return;
 
 				const touchEndX = e.changedTouches[0].clientX;
 				const touchEndY = e.changedTouches[0].clientY;
 				const diffX = touchEndX - touchStartX;
 				const diffY = touchEndY - touchStartY;
 
+				// 수평 이동 거리가 55px 이상이고 수직 이동보다 클 때만 실행
 				if (Math.abs(diffX) > 55 && Math.abs(diffX) > Math.abs(diffY)) {
+					isSwiping = true; // 잠금 활성화
+
 					if (diffX < 0) {
 						calendar.next();
 						triggerCalendarTransition('next');
@@ -1173,6 +1179,11 @@
 						calendar.prev();
 						triggerCalendarTransition('prev');
 					}
+
+					// 트랜지션 애니메이션(0.22s) 완료 후 잠금 해제 (350ms)
+					setTimeout(() => {
+						isSwiping = false;
+					}, 350);
 				}
 			}, { passive: true });
 		}
