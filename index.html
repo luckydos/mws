@@ -11,7 +11,7 @@
 
 	<!-- PWA Manifest 연결 -->
 	<link rel="manifest" href="./manifest.json">
-	<meta name="theme-color" content="#2563eb">
+	<meta name="theme-color" content="#f8fafc">
 
 	<!-- iOS 사파리 홈화면 추가 대응 -->
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,8 +56,9 @@
 			-webkit-touch-callout: none;
 			user-select: none;
 
-			/* 앱 전체 바닥에 기기 내비게이션 바 높이만큼 안전 여백 확보 */
-			padding-bottom: env(safe-area-inset-bottom, 16px);
+			/* 필수: 높이 계산에 패딩을 포함하도록 지정 */
+			box-sizing: border-box;
+			padding-bottom: env(safe-area-inset-bottom, 20px);
 			min-height: 100vh;
 		}
 
