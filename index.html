@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<title>휴일 캘린더</title>
 
 	<!-- 파비콘 및 홈 화면 아이콘 -->
@@ -55,6 +55,10 @@
 			min-height: 100vh;
 			-webkit-touch-callout: none;
 			user-select: none;
+
+			/* 앱 전체 바닥에 기기 내비게이션 바 높이만큼 안전 여백 확보 */
+			padding-bottom: env(safe-area-inset-bottom, 16px);
+			min-height: 100vh;
 		}
 
 		.app-container {
