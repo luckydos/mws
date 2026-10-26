@@ -3,6 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
+	<!-- 1. viewport-fit=cover 제거 (기본 시스템 바 영역 침범 방지) -->
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<title>휴일 캘린더</title>
 
@@ -11,11 +12,17 @@
 
 	<!-- PWA Manifest 연결 -->
 	<link rel="manifest" href="./manifest.json">
-	<meta name="theme-color" content="#2563eb">
 
+	<!-- 2. 핵심 1: 브라우저와 OS에 밝은 테마임을 선언 (홈버튼을 검은색으로 강제하는 트리거) -->
+	<meta name="color-scheme" content="light">
+	
+	<!-- 3. 핵심 2: 바닥 배경색(#ffffff)과 일치시켜 시스템에 밝은 바닥임을 전달 -->
+	<meta name="theme-color" content="#ffffff">
+	
+	<!-- 4. 호환 메타 태그 (반드시 default 유지) -->
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	
 	<meta name="apple-mobile-web-app-title" content="휴일캘린더">
 	<link rel="apple-touch-icon" sizes="192x192" href="./images/icon-192.png">
@@ -56,23 +63,6 @@
 			min-height: 100vh;
 			-webkit-touch-callout: none;
 			user-select: none;
-
-			/* 하단 안전 영역만큼 콘텐츠가 버튼에 닿지 않도록 여백 부여 */
-			padding-bottom: env(safe-area-inset-bottom, 20px);
-		}
-
-		/* 시스템 내비게이션 바 뒤쪽에 깔리는 어두운 배경 띠 */
-		body::after {
-			content: "";
-			position: fixed;
-			bottom: 0;
-			left: 0;
-			width: 100%;
-			/* 기기 하단 내비게이션 바 높이만큼만 정확히 차지 */
-			height: env(safe-area-inset-bottom, 20px);
-			background-color: #000000; /* 첫 번째 앱처럼 어두운 띠를 형성 */
-			z-index: 99999;
-			pointer-events: none; /* 클릭 방해 금지 */
 		}
 
 		.app-container {
